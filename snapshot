@@ -1,0 +1,3062 @@
+namespace: {}
+persistentVolume: {}
+persistentVolumeClaim: {}
+postgreSQLUser: {}
+configMap: {}
+secret: {}
+service: {}
+ingress: {}
+daemonSet: {}
+statefulSet: {}
+deployment: {}
+// ---
+namespace: {}
+persistentVolume: {
+    books: {
+        apiVersion: "v1"
+        kind:       "PersistentVolume"
+        spec: {
+            accessModes: ["ReadWriteOnce"]
+            capacity: {
+                storage: "30Gi"
+            }
+            claimRef: {
+                apiVersion: "v1"
+                kind:       "PersistentVolumeClaim"
+                name:       "books"
+                namespace:  "calibre-web"
+            }
+            storageClassName: "microk8s-hostpath"
+            hostPath: {
+                path: "/srv/data/media/Books"
+            }
+        }
+        metadata: {
+            labels: {
+                "app.kubernetes.io/name":      "calibre-web"
+                "app.kubernetes.io/part-of":   "calibre-web"
+                "app.kubernetes.io/component": "app"
+            }
+            name:      "books"
+            namespace: "calibre-web"
+        }
+    }
+    config: {
+        apiVersion: "v1"
+        kind:       "PersistentVolume"
+        metadata: {
+            labels: {
+                "app.kubernetes.io/name":      "calibre-web"
+                "app.kubernetes.io/part-of":   "calibre-web"
+                "app.kubernetes.io/component": "app"
+            }
+            name:      "config"
+            namespace: "calibre-web"
+        }
+        spec: {
+            accessModes: ["ReadWriteOnce"]
+            capacity: {
+                storage: "1Gi"
+            }
+            claimRef: {
+                apiVersion: "v1"
+                kind:       "PersistentVolumeClaim"
+                name:       "config"
+                namespace:  "calibre-web"
+            }
+            storageClassName: "microk8s-hostpath"
+            hostPath: {
+                path: "/srv/data/calibre-web"
+            }
+        }
+    }
+}
+persistentVolumeClaim: {
+    books: {
+        apiVersion: "v1"
+        kind:       "PersistentVolumeClaim"
+        spec: {
+            accessModes: ["ReadWriteOnce"]
+            resources: {
+                requests: {
+                    storage: "30Gi"
+                }
+            }
+            storageClassName: "microk8s-hostpath"
+            volumeName:       "books"
+        }
+        metadata: {
+            labels: {
+                "app.kubernetes.io/name":      "calibre-web"
+                "app.kubernetes.io/part-of":   "calibre-web"
+                "app.kubernetes.io/component": "app"
+            }
+            name:      "books"
+            namespace: "calibre-web"
+        }
+    }
+    config: {
+        apiVersion: "v1"
+        kind:       "PersistentVolumeClaim"
+        metadata: {
+            labels: {
+                "app.kubernetes.io/name":      "calibre-web"
+                "app.kubernetes.io/part-of":   "calibre-web"
+                "app.kubernetes.io/component": "app"
+            }
+            name:      "config"
+            namespace: "calibre-web"
+        }
+        spec: {
+            accessModes: ["ReadWriteOnce"]
+            resources: {
+                requests: {
+                    storage: "1Gi"
+                }
+            }
+            storageClassName: "microk8s-hostpath"
+            volumeName:       "config"
+        }
+    }
+}
+postgreSQLUser: {}
+configMap: {
+    env: {
+        apiVersion: "v1"
+        kind:       "ConfigMap"
+        data: {
+            DOCKER_MODS: "linuxserver/mods:universal-calibre"
+            PGID:        "1000"
+            PUID:        "1000"
+            TZ:          "America/New York"
+        }
+        metadata: {
+            name:      "env"
+            namespace: "calibre-web"
+            labels: {
+                "app.kubernetes.io/name":      "calibre-web"
+                "app.kubernetes.io/part-of":   "calibre-web"
+                "app.kubernetes.io/component": "app"
+            }
+        }
+    }
+}
+secret: {}
+service: {
+    "calibre-web": {
+        apiVersion: "v1"
+        kind:       "Service"
+        metadata: {
+            labels: {
+                "app.kubernetes.io/name":      "calibre-web"
+                "app.kubernetes.io/part-of":   "calibre-web"
+                "app.kubernetes.io/component": "app"
+            }
+            name:      "calibre-web"
+            namespace: "calibre-web"
+        }
+        spec: {
+            ports: [{
+                name:       "http"
+                port:       8083
+                targetPort: 8083
+                protocol:   "TCP"
+            }]
+            selector: {
+                name:      "calibre-web"
+                namespace: "calibre-web"
+                labels: {
+                    "app.kubernetes.io/name":      "calibre-web"
+                    "app.kubernetes.io/part-of":   "calibre-web"
+                    "app.kubernetes.io/component": "app"
+                }
+            }
+            type: "LoadBalancer"
+        }
+    }
+}
+ingress: {
+    "calibre-web": {
+        apiVersion: "networking.k8s.io/v1"
+        kind:       "Ingress"
+        metadata: {
+            labels: {
+                "app.kubernetes.io/name":      "calibre-web"
+                "app.kubernetes.io/part-of":   "calibre-web"
+                "app.kubernetes.io/component": "app"
+            }
+            annotations: {
+                "cert-manager.io/cluster-issuer": "letsencrypt"
+            }
+            name:      "calibre-web"
+            namespace: "calibre-web"
+        }
+        spec: {
+            rules: [{
+                host: "calibre-web.home.philipdouglass.com"
+                http: {
+                    paths: [{
+                        path:     "/"
+                        pathType: "Prefix"
+                        backend: {
+                            service: {
+                                name: "calibre-web"
+                                port: {
+                                    number: 8083
+                                }
+                            }
+                        }
+                    }]
+                }
+            }]
+            tls: [{
+                hosts: ["calibre-web.home.philipdouglass.com"]
+                secretName: "calibre-web-tls"
+            }]
+            ingressClassName: "nginx"
+        }
+    }
+}
+daemonSet: {}
+statefulSet: {}
+deployment: {
+    "calibre-web": {
+        apiVersion: "apps/v1"
+        spec: {
+            replicas:             1
+            revisionHistoryLimit: 2
+            strategy: {
+                type: "Recreate"
+            }
+            selector: {
+                matchLabels: {
+                    name:      "calibre-web"
+                    namespace: "calibre-web"
+                    labels: {
+                        "app.kubernetes.io/name":      "calibre-web"
+                        "app.kubernetes.io/part-of":   "calibre-web"
+                        "app.kubernetes.io/component": "app"
+                    }
+                }
+            }
+            template: {
+                spec: {
+                    containers: [{
+                        envFrom: [{
+                            configMapRef: {
+                                name: "env"
+                            }
+                        }]
+                        image: "lscr.io/linuxserver/calibre-web:latest"
+                        ports: [{
+                            containerPort: 8083
+                        }]
+                        name: "calibre-web"
+                        volumeMounts: [{
+                            mountPath: "/config"
+                            name:      "config"
+                        }, {
+                            mountPath: "/books"
+                            name:      "books"
+                        }]
+                    }]
+                    volumes: [{
+                        name: "config"
+                        persistentVolumeClaim: {
+                            claimName: "config"
+                        }
+                    }, {
+                        name: "books"
+                        persistentVolumeClaim: {
+                            claimName: "books"
+                        }
+                    }]
+                }
+                metadata: {
+                    labels: {
+                        name:      "calibre-web"
+                        namespace: "calibre-web"
+                        labels: {
+                            "app.kubernetes.io/name":      "calibre-web"
+                            "app.kubernetes.io/part-of":   "calibre-web"
+                            "app.kubernetes.io/component": "app"
+                        }
+                    }
+                }
+            }
+        }
+        metadata: {
+            name:      "calibre-web"
+            namespace: "calibre-web"
+            labels: {
+                "app.kubernetes.io/name":      "calibre-web"
+                "app.kubernetes.io/part-of":   "calibre-web"
+                "app.kubernetes.io/component": "app"
+            }
+        }
+        kind: "Deployment"
+    }
+}
+// ---
+namespace: {}
+persistentVolume: {
+    config: {
+        apiVersion: "v1"
+        kind:       "PersistentVolume"
+        metadata: {
+            labels: {
+                "app.kubernetes.io/name":      "homeassistant"
+                "app.kubernetes.io/part-of":   "homeassistant"
+                "app.kubernetes.io/component": "app"
+            }
+            name:      "config"
+            namespace: "homeassistant"
+        }
+        spec: {
+            accessModes: ["ReadWriteOnce"]
+            capacity: {
+                storage: "1Gi"
+            }
+            claimRef: {
+                apiVersion: "v1"
+                kind:       "PersistentVolumeClaim"
+                name:       "config"
+                namespace:  "homeassistant"
+            }
+            storageClassName: "microk8s-hostpath"
+            hostPath: {
+                path: "/srv/data/homeassistant"
+            }
+        }
+    }
+}
+persistentVolumeClaim: {
+    config: {
+        apiVersion: "v1"
+        kind:       "PersistentVolumeClaim"
+        metadata: {
+            labels: {
+                "app.kubernetes.io/name":      "homeassistant"
+                "app.kubernetes.io/part-of":   "homeassistant"
+                "app.kubernetes.io/component": "app"
+            }
+            name:      "config"
+            namespace: "homeassistant"
+        }
+        spec: {
+            accessModes: ["ReadWriteOnce"]
+            resources: {
+                requests: {
+                    storage: "1Gi"
+                }
+            }
+            storageClassName: "microk8s-hostpath"
+            volumeName:       "config"
+        }
+    }
+}
+postgreSQLUser: {}
+configMap: {
+    env: {
+        apiVersion: "v1"
+        kind:       "ConfigMap"
+        data: {
+            TZ: "America/New York"
+        }
+        metadata: {
+            name:      "env"
+            namespace: "homeassistant"
+            labels: {
+                "app.kubernetes.io/name":      "homeassistant"
+                "app.kubernetes.io/part-of":   "homeassistant"
+                "app.kubernetes.io/component": "app"
+            }
+        }
+    }
+}
+secret: {}
+service: {
+    homeassistant: {
+        apiVersion: "v1"
+        kind:       "Service"
+        metadata: {
+            labels: {
+                "app.kubernetes.io/name":      "homeassistant"
+                "app.kubernetes.io/part-of":   "homeassistant"
+                "app.kubernetes.io/component": "app"
+            }
+            name:      "homeassistant"
+            namespace: "homeassistant"
+        }
+        spec: {
+            ports: [{
+                name:       "http"
+                port:       8123
+                targetPort: 8123
+                protocol:   "TCP"
+            }]
+            selector: {
+                name:      "homeassistant"
+                namespace: "homeassistant"
+                labels: {
+                    "app.kubernetes.io/name":      "homeassistant"
+                    "app.kubernetes.io/part-of":   "homeassistant"
+                    "app.kubernetes.io/component": "app"
+                }
+            }
+            type: "LoadBalancer"
+        }
+    }
+}
+ingress: {
+    homeassistant: {
+        apiVersion: "networking.k8s.io/v1"
+        kind:       "Ingress"
+        metadata: {
+            labels: {
+                "app.kubernetes.io/name":      "homeassistant"
+                "app.kubernetes.io/part-of":   "homeassistant"
+                "app.kubernetes.io/component": "app"
+            }
+            annotations: {
+                "cert-manager.io/cluster-issuer": "letsencrypt"
+            }
+            name:      "homeassistant"
+            namespace: "homeassistant"
+        }
+        spec: {
+            rules: [{
+                host: "homeassistant.home.philipdouglass.com"
+                http: {
+                    paths: [{
+                        path:     "/"
+                        pathType: "Prefix"
+                        backend: {
+                            service: {
+                                name: "homeassistant"
+                                port: {
+                                    number: 8123
+                                }
+                            }
+                        }
+                    }]
+                }
+            }]
+            tls: [{
+                hosts: ["homeassistant.home.philipdouglass.com"]
+                secretName: "homeassistant-tls"
+            }]
+            ingressClassName: "nginx"
+        }
+    }
+}
+daemonSet: {}
+statefulSet: {}
+deployment: {
+    homeassistant: {
+        apiVersion: "apps/v1"
+        spec: {
+            replicas:             1
+            revisionHistoryLimit: 2
+            strategy: {
+                type: "Recreate"
+            }
+            selector: {
+                matchLabels: {
+                    name:      "homeassistant"
+                    namespace: "homeassistant"
+                    labels: {
+                        "app.kubernetes.io/name":      "homeassistant"
+                        "app.kubernetes.io/part-of":   "homeassistant"
+                        "app.kubernetes.io/component": "app"
+                    }
+                }
+            }
+            template: {
+                spec: {
+                    containers: [{
+                        envFrom: [{
+                            configMapRef: {
+                                name: "env"
+                            }
+                        }]
+                        image: "homeassistant/home-assistant"
+                        ports: [{
+                            containerPort: 8123
+                        }]
+                        name: "homeassistant"
+                        volumeMounts: [{
+                            mountPath: "/config"
+                            name:      "config"
+                        }]
+                    }]
+                    volumes: [{
+                        name: "config"
+                        persistentVolumeClaim: {
+                            claimName: "config"
+                        }
+                    }]
+                    hostNetwork: true
+                }
+                metadata: {
+                    labels: {
+                        name:      "homeassistant"
+                        namespace: "homeassistant"
+                        labels: {
+                            "app.kubernetes.io/name":      "homeassistant"
+                            "app.kubernetes.io/part-of":   "homeassistant"
+                            "app.kubernetes.io/component": "app"
+                        }
+                    }
+                }
+            }
+        }
+        metadata: {
+            name:      "homeassistant"
+            namespace: "homeassistant"
+            labels: {
+                "app.kubernetes.io/name":      "homeassistant"
+                "app.kubernetes.io/part-of":   "homeassistant"
+                "app.kubernetes.io/component": "app"
+            }
+        }
+        kind: "Deployment"
+    }
+}
+// ---
+namespace: {}
+persistentVolume: {
+    data: {
+        apiVersion: "v1"
+        kind:       "PersistentVolume"
+        metadata: {
+            labels: {
+                "app.kubernetes.io/name":      "mosquitto"
+                "app.kubernetes.io/part-of":   "mosquitto"
+                "app.kubernetes.io/component": "app"
+            }
+            name:      "data"
+            namespace: "mosquitto"
+        }
+        spec: {
+            accessModes: ["ReadWriteOnce"]
+            capacity: {
+                storage: "1Gi"
+            }
+            claimRef: {
+                apiVersion: "v1"
+                kind:       "PersistentVolumeClaim"
+                name:       "data"
+                namespace:  "mosquitto"
+            }
+            storageClassName: "microk8s-hostpath"
+            hostPath: {
+                path: "/srv/data/mosquitto"
+            }
+        }
+    }
+}
+persistentVolumeClaim: {
+    data: {
+        apiVersion: "v1"
+        kind:       "PersistentVolumeClaim"
+        metadata: {
+            labels: {
+                "app.kubernetes.io/name":      "mosquitto"
+                "app.kubernetes.io/part-of":   "mosquitto"
+                "app.kubernetes.io/component": "app"
+            }
+            name:      "data"
+            namespace: "mosquitto"
+        }
+        spec: {
+            accessModes: ["ReadWriteOnce"]
+            resources: {
+                requests: {
+                    storage: "1Gi"
+                }
+            }
+            storageClassName: "microk8s-hostpath"
+            volumeName:       "data"
+        }
+    }
+}
+postgreSQLUser: {}
+configMap: {
+    config: {
+        apiVersion: "v1"
+        kind:       "ConfigMap"
+        data: {
+            "mosquitto.conf": """
+                persistence true
+                persistence_location /mosquitto/data
+                listener 1883
+                listener 9001
+                protocol websockets
+                log_dest stdout
+                require_certificate false
+                """
+        }
+        metadata: {
+            name:      "config"
+            namespace: "mosquitto"
+            labels: {
+                "app.kubernetes.io/name":      "mosquitto"
+                "app.kubernetes.io/part-of":   "mosquitto"
+                "app.kubernetes.io/component": "app"
+            }
+        }
+    }
+}
+secret: {}
+service: {
+    "mosquitto-hl": {
+        apiVersion: "v1"
+        kind:       "Service"
+        spec: {
+            ports: [{
+                name:       "mqtt"
+                port:       1883
+                targetPort: 1883
+                protocol:   "TCP"
+            }, {
+                name:       "websocket"
+                port:       9001
+                targetPort: 9001
+                protocol:   "TCP"
+            }]
+            selector: {
+                name:      "mosquitto-hl"
+                namespace: "mosquitto"
+                labels: {
+                    "app.kubernetes.io/name":      "mosquitto"
+                    "app.kubernetes.io/part-of":   "mosquitto"
+                    "app.kubernetes.io/component": "app"
+                }
+            }
+            type:      "ClusterIP"
+            clusterIP: null
+        }
+        metadata: {
+            name:      "mosquitto-hl"
+            namespace: "mosquitto"
+            labels: {
+                "app.kubernetes.io/name":      "mosquitto"
+                "app.kubernetes.io/part-of":   "mosquitto"
+                "app.kubernetes.io/component": "app"
+            }
+        }
+    }
+}
+ingress: {}
+daemonSet: {}
+statefulSet: {
+    mosquitto: {
+        apiVersion: "apps/v1"
+        kind:       "StatefulSet"
+        spec: {
+            replicas:             1
+            revisionHistoryLimit: 2
+            strategy: {
+                type: "Recreate"
+            }
+            selector: {
+                matchLabels: {
+                    name:      "mosquitto"
+                    namespace: "mosquitto"
+                    labels: {
+                        "app.kubernetes.io/name":      "mosquitto"
+                        "app.kubernetes.io/part-of":   "mosquitto"
+                        "app.kubernetes.io/component": "app"
+                    }
+                }
+            }
+            serviceName: "mosquitto-hl"
+            template: {
+                spec: {
+                    containers: [{
+                        command: ["mosquitto", "-c", "/mosquitto/config/mosquitto.conf"]
+                        image: "eclipse-mosquitto:2.0"
+                        ports: [{
+                            name:          "mqtt"
+                            containerPort: 1883
+                        }, {
+                            name:          "websocket"
+                            containerPort: 9001
+                        }]
+                        livenessProbe: {
+                            tcpSocket: {
+                                port: "mqtt"
+                            }
+                        }
+                        readinessProbe: {
+                            tcpSocket: {
+                                port: "mqtt"
+                            }
+                        }
+                        name: "mosquitto"
+                        volumeMounts: [{
+                            mountPath: "/mosquitto/config"
+                            name:      "config"
+                        }, {
+                            mountPath: "/mosquitto/data"
+                            name:      "data"
+                        }]
+                    }]
+                    volumes: [{
+                        name: "config"
+                        configMap: {
+                            name: "config"
+                        }
+                    }, {
+                        name: "data"
+                        persistentVolumeClaim: {
+                            claimName: "data"
+                        }
+                    }]
+                }
+                metadata: {
+                    labels: {
+                        name:      "mosquitto"
+                        namespace: "mosquitto"
+                        labels: {
+                            "app.kubernetes.io/name":      "mosquitto"
+                            "app.kubernetes.io/part-of":   "mosquitto"
+                            "app.kubernetes.io/component": "app"
+                        }
+                    }
+                }
+            }
+        }
+        metadata: {
+            name:      "mosquitto"
+            namespace: "mosquitto"
+            labels: {
+                "app.kubernetes.io/name":      "mosquitto"
+                "app.kubernetes.io/part-of":   "mosquitto"
+                "app.kubernetes.io/component": "app"
+            }
+        }
+    }
+}
+deployment: {}
+// ---
+namespace: {}
+persistentVolume: {
+    data: {
+        apiVersion: "v1"
+        kind:       "PersistentVolume"
+        metadata: {
+            labels: {
+                "app.kubernetes.io/name":      "nodered"
+                "app.kubernetes.io/part-of":   "nodered"
+                "app.kubernetes.io/component": "app"
+            }
+            name:      "data"
+            namespace: "nodered"
+        }
+        spec: {
+            accessModes: ["ReadWriteOnce"]
+            capacity: {
+                storage: "1Gi"
+            }
+            claimRef: {
+                apiVersion: "v1"
+                kind:       "PersistentVolumeClaim"
+                name:       "data"
+                namespace:  "nodered"
+            }
+            storageClassName: "microk8s-hostpath"
+            hostPath: {
+                path: "/srv/data/nodered"
+            }
+        }
+    }
+}
+persistentVolumeClaim: {
+    data: {
+        apiVersion: "v1"
+        kind:       "PersistentVolumeClaim"
+        metadata: {
+            labels: {
+                "app.kubernetes.io/name":      "nodered"
+                "app.kubernetes.io/part-of":   "nodered"
+                "app.kubernetes.io/component": "app"
+            }
+            name:      "data"
+            namespace: "nodered"
+        }
+        spec: {
+            accessModes: ["ReadWriteOnce"]
+            resources: {
+                requests: {
+                    storage: "1Gi"
+                }
+            }
+            storageClassName: "microk8s-hostpath"
+            volumeName:       "data"
+        }
+    }
+}
+postgreSQLUser: {}
+configMap: {
+    env: {
+        apiVersion: "v1"
+        kind:       "ConfigMap"
+        data: {
+            NODE_RED_ENABLE_PROJECTS: "false"
+            TZ:                       "America/New_York"
+        }
+        metadata: {
+            name:      "env"
+            namespace: "nodered"
+            labels: {
+                "app.kubernetes.io/name":      "nodered"
+                "app.kubernetes.io/part-of":   "nodered"
+                "app.kubernetes.io/component": "app"
+            }
+        }
+    }
+}
+secret: {
+    cred: {
+        apiVersion: "v1"
+        kind:       "Secret"
+        data: {
+            NODE_RED_CREDENTIAL_SECRET: "bWF0cmlhcmNoLXBvaW50bGVzcy1zY2FsbGlvbg=="
+        }
+        metadata: {
+            name:      "cred"
+            namespace: "nodered"
+            labels: {
+                "app.kubernetes.io/name":      "nodered"
+                "app.kubernetes.io/part-of":   "nodered"
+                "app.kubernetes.io/component": "app"
+            }
+        }
+        type: "Opaque"
+    }
+}
+service: {
+    nodered: {
+        apiVersion: "v1"
+        kind:       "Service"
+        metadata: {
+            labels: {
+                "app.kubernetes.io/name":      "nodered"
+                "app.kubernetes.io/part-of":   "nodered"
+                "app.kubernetes.io/component": "app"
+            }
+            name:      "nodered"
+            namespace: "nodered"
+        }
+        spec: {
+            ports: [{
+                name:       "http"
+                port:       1880
+                targetPort: 1880
+                protocol:   "TCP"
+            }, {
+                name:       "orvibo"
+                port:       10000
+                targetPort: 10000
+                protocol:   "UDP"
+            }]
+            selector: {
+                name:      "nodered"
+                namespace: "nodered"
+                labels: {
+                    "app.kubernetes.io/name":      "nodered"
+                    "app.kubernetes.io/part-of":   "nodered"
+                    "app.kubernetes.io/component": "app"
+                }
+            }
+            type: "LoadBalancer"
+        }
+    }
+}
+ingress: {
+    nodered: {
+        apiVersion: "networking.k8s.io/v1"
+        kind:       "Ingress"
+        metadata: {
+            labels: {
+                "app.kubernetes.io/name":      "nodered"
+                "app.kubernetes.io/part-of":   "nodered"
+                "app.kubernetes.io/component": "app"
+            }
+            annotations: {
+                "cert-manager.io/cluster-issuer": "letsencrypt"
+            }
+            name:      "nodered"
+            namespace: "nodered"
+        }
+        spec: {
+            rules: [{
+                host: "nodered.home.philipdouglass.com"
+                http: {
+                    paths: [{
+                        path:     "/"
+                        pathType: "Prefix"
+                        backend: {
+                            service: {
+                                name: "nodered"
+                                port: {
+                                    number: 1880
+                                }
+                            }
+                        }
+                    }]
+                }
+            }]
+            tls: [{
+                hosts: ["nodered.home.philipdouglass.com"]
+                secretName: "nodered-tls"
+            }]
+            ingressClassName: "nginx"
+        }
+    }
+}
+daemonSet: {}
+statefulSet: {}
+deployment: {
+    nodered: {
+        apiVersion: "apps/v1"
+        spec: {
+            replicas:             1
+            revisionHistoryLimit: 2
+            strategy: {
+                type: "Recreate"
+            }
+            selector: {
+                matchLabels: {
+                    name:      "nodered"
+                    namespace: "nodered"
+                    labels: {
+                        "app.kubernetes.io/name":      "nodered"
+                        "app.kubernetes.io/part-of":   "nodered"
+                        "app.kubernetes.io/component": "app"
+                    }
+                }
+            }
+            template: {
+                spec: {
+                    containers: [{
+                        envFrom: [{
+                            configMapRef: {
+                                name: "env"
+                            }
+                        }, {
+                            secretRef: {
+                                name: "cred"
+                            }
+                        }]
+                        image: "nodered/node-red"
+                        ports: [{
+                            containerPort: 1880
+                        }, {
+                            name:          "orvibo"
+                            containerPort: 10000
+                            protocol:      "UDP"
+                        }]
+                        name: "nodered"
+                        volumeMounts: [{
+                            mountPath: "/data"
+                            name:      "data"
+                        }]
+                    }]
+                    volumes: [{
+                        name: "data"
+                        persistentVolumeClaim: {
+                            claimName: "data"
+                        }
+                    }]
+                }
+                metadata: {
+                    labels: {
+                        name:      "nodered"
+                        namespace: "nodered"
+                        labels: {
+                            "app.kubernetes.io/name":      "nodered"
+                            "app.kubernetes.io/part-of":   "nodered"
+                            "app.kubernetes.io/component": "app"
+                        }
+                    }
+                }
+            }
+        }
+        metadata: {
+            name:      "nodered"
+            namespace: "nodered"
+            labels: {
+                "app.kubernetes.io/name":      "nodered"
+                "app.kubernetes.io/part-of":   "nodered"
+                "app.kubernetes.io/component": "app"
+            }
+        }
+        kind: "Deployment"
+    }
+}
+// ---
+namespace: {}
+persistentVolume: {
+    config: {
+        apiVersion: "v1"
+        kind:       "PersistentVolume"
+        metadata: {
+            labels: {
+                "app.kubernetes.io/name":      "nzbget"
+                "app.kubernetes.io/part-of":   "nzbget"
+                "app.kubernetes.io/component": "app"
+            }
+            name:      "config"
+            namespace: "nzbget"
+        }
+        spec: {
+            accessModes: ["ReadWriteOnce"]
+            capacity: {
+                storage: "1Gi"
+            }
+            claimRef: {
+                apiVersion: "v1"
+                kind:       "PersistentVolumeClaim"
+                name:       "config"
+                namespace:  "nzbget"
+            }
+            storageClassName: "microk8s-hostpath"
+            hostPath: {
+                path: "/srv/data/nzbget"
+            }
+        }
+    }
+    data: {
+        apiVersion: "v1"
+        kind:       "PersistentVolume"
+        metadata: {
+            labels: {
+                "app.kubernetes.io/name":      "nzbget"
+                "app.kubernetes.io/part-of":   "nzbget"
+                "app.kubernetes.io/component": "app"
+            }
+            name:      "data"
+            namespace: "nzbget"
+        }
+        spec: {
+            accessModes: ["ReadWriteOnce"]
+            capacity: {
+                storage: "1Gi"
+            }
+            claimRef: {
+                apiVersion: "v1"
+                kind:       "PersistentVolumeClaim"
+                name:       "data"
+                namespace:  "nzbget"
+            }
+            storageClassName: "microk8s-hostpath"
+            hostPath: {
+                path: "/srv/data/nzbget"
+            }
+        }
+    }
+}
+persistentVolumeClaim: {
+    config: {
+        apiVersion: "v1"
+        kind:       "PersistentVolumeClaim"
+        metadata: {
+            labels: {
+                "app.kubernetes.io/name":      "nzbget"
+                "app.kubernetes.io/part-of":   "nzbget"
+                "app.kubernetes.io/component": "app"
+            }
+            name:      "config"
+            namespace: "nzbget"
+        }
+        spec: {
+            accessModes: ["ReadWriteOnce"]
+            resources: {
+                requests: {
+                    storage: "1Gi"
+                }
+            }
+            storageClassName: "microk8s-hostpath"
+            volumeName:       "config"
+        }
+    }
+    data: {
+        apiVersion: "v1"
+        kind:       "PersistentVolumeClaim"
+        metadata: {
+            labels: {
+                "app.kubernetes.io/name":      "nzbget"
+                "app.kubernetes.io/part-of":   "nzbget"
+                "app.kubernetes.io/component": "app"
+            }
+            name:      "data"
+            namespace: "nzbget"
+        }
+        spec: {
+            accessModes: ["ReadWriteOnce"]
+            resources: {
+                requests: {
+                    storage: "1Gi"
+                }
+            }
+            storageClassName: "microk8s-hostpath"
+            volumeName:       "data"
+        }
+    }
+}
+postgreSQLUser: {}
+configMap: {
+    env: {
+        apiVersion: "v1"
+        kind:       "ConfigMap"
+        data: {
+            PGID:  "1000"
+            PUID:  "1000"
+            TZ:    "America/New York"
+            UMASK: "002"
+        }
+        metadata: {
+            name:      "env"
+            namespace: "nzbget"
+            labels: {
+                "app.kubernetes.io/name":      "nzbget"
+                "app.kubernetes.io/part-of":   "nzbget"
+                "app.kubernetes.io/component": "app"
+            }
+        }
+    }
+}
+secret: {}
+service: {
+    nzbget: {
+        apiVersion: "v1"
+        kind:       "Service"
+        metadata: {
+            labels: {
+                "app.kubernetes.io/name":      "nzbget"
+                "app.kubernetes.io/part-of":   "nzbget"
+                "app.kubernetes.io/component": "app"
+            }
+            name:      "nzbget"
+            namespace: "nzbget"
+        }
+        spec: {
+            ports: [{
+                name:       "http"
+                port:       6789
+                targetPort: 6789
+                protocol:   "TCP"
+            }]
+            selector: {
+                name:      "nzbget"
+                namespace: "nzbget"
+                labels: {
+                    "app.kubernetes.io/name":      "nzbget"
+                    "app.kubernetes.io/part-of":   "nzbget"
+                    "app.kubernetes.io/component": "app"
+                }
+            }
+            type: "LoadBalancer"
+        }
+    }
+}
+ingress: {
+    nzbget: {
+        apiVersion: "networking.k8s.io/v1"
+        kind:       "Ingress"
+        metadata: {
+            labels: {
+                "app.kubernetes.io/name":      "nzbget"
+                "app.kubernetes.io/part-of":   "nzbget"
+                "app.kubernetes.io/component": "app"
+            }
+            annotations: {
+                "cert-manager.io/cluster-issuer": "letsencrypt"
+            }
+            name:      "nzbget"
+            namespace: "nzbget"
+        }
+        spec: {
+            rules: [{
+                host: "nzbget.home.philipdouglass.com"
+                http: {
+                    paths: [{
+                        path:     "/"
+                        pathType: "Prefix"
+                        backend: {
+                            service: {
+                                name: "nzbget"
+                                port: {
+                                    number: 6789
+                                }
+                            }
+                        }
+                    }]
+                }
+            }]
+            tls: [{
+                hosts: ["nzbget.home.philipdouglass.com"]
+                secretName: "nzbget-tls"
+            }]
+            ingressClassName: "nginx"
+        }
+    }
+}
+daemonSet: {}
+statefulSet: {}
+deployment: {
+    nzbget: {
+        apiVersion: "apps/v1"
+        spec: {
+            replicas:             1
+            revisionHistoryLimit: 2
+            strategy: {
+                type: "Recreate"
+            }
+            selector: {
+                matchLabels: {
+                    name:      "nzbget"
+                    namespace: "nzbget"
+                    labels: {
+                        "app.kubernetes.io/name":      "nzbget"
+                        "app.kubernetes.io/part-of":   "nzbget"
+                        "app.kubernetes.io/component": "app"
+                    }
+                }
+            }
+            template: {
+                spec: {
+                    containers: [{
+                        envFrom: [{
+                            configMapRef: {
+                                name: "env"
+                            }
+                        }]
+                        image: "hotio/nzbget"
+                        ports: [{
+                            containerPort: 6789
+                        }]
+                        name: "nzbget"
+                        volumeMounts: [{
+                            mountPath: "/config"
+                            name:      "config"
+                        }, {
+                            mountPath: "/data"
+                            name:      "data"
+                        }]
+                    }]
+                    volumes: [{
+                        name: "config"
+                        persistentVolumeClaim: {
+                            claimName: "config"
+                        }
+                    }, {
+                        name: "data"
+                        persistentVolumeClaim: {
+                            claimName: "data"
+                        }
+                    }]
+                }
+                metadata: {
+                    labels: {
+                        name:      "nzbget"
+                        namespace: "nzbget"
+                        labels: {
+                            "app.kubernetes.io/name":      "nzbget"
+                            "app.kubernetes.io/part-of":   "nzbget"
+                            "app.kubernetes.io/component": "app"
+                        }
+                    }
+                }
+            }
+        }
+        metadata: {
+            name:      "nzbget"
+            namespace: "nzbget"
+            labels: {
+                "app.kubernetes.io/name":      "nzbget"
+                "app.kubernetes.io/part-of":   "nzbget"
+                "app.kubernetes.io/component": "app"
+            }
+        }
+        kind: "Deployment"
+    }
+}
+// ---
+namespace: {}
+persistentVolume: {
+    config: {
+        apiVersion: "v1"
+        kind:       "PersistentVolume"
+        metadata: {
+            labels: {
+                "app.kubernetes.io/name":      "overseerr"
+                "app.kubernetes.io/part-of":   "overseerr"
+                "app.kubernetes.io/component": "app"
+            }
+            name:      "config"
+            namespace: "overseerr"
+        }
+        spec: {
+            accessModes: ["ReadWriteOnce"]
+            capacity: {
+                storage: "1Gi"
+            }
+            claimRef: {
+                apiVersion: "v1"
+                kind:       "PersistentVolumeClaim"
+                name:       "config"
+                namespace:  "overseerr"
+            }
+            storageClassName: "microk8s-hostpath"
+            hostPath: {
+                path: "/srv/data/overseerr"
+            }
+        }
+    }
+}
+persistentVolumeClaim: {
+    config: {
+        apiVersion: "v1"
+        kind:       "PersistentVolumeClaim"
+        metadata: {
+            labels: {
+                "app.kubernetes.io/name":      "overseerr"
+                "app.kubernetes.io/part-of":   "overseerr"
+                "app.kubernetes.io/component": "app"
+            }
+            name:      "config"
+            namespace: "overseerr"
+        }
+        spec: {
+            accessModes: ["ReadWriteOnce"]
+            resources: {
+                requests: {
+                    storage: "1Gi"
+                }
+            }
+            storageClassName: "microk8s-hostpath"
+            volumeName:       "config"
+        }
+    }
+}
+postgreSQLUser: {}
+configMap: {
+    env: {
+        apiVersion: "v1"
+        kind:       "ConfigMap"
+        data: {
+            TZ: "America/New York"
+        }
+        metadata: {
+            name:      "env"
+            namespace: "overseerr"
+            labels: {
+                "app.kubernetes.io/name":      "overseerr"
+                "app.kubernetes.io/part-of":   "overseerr"
+                "app.kubernetes.io/component": "app"
+            }
+        }
+    }
+}
+secret: {}
+service: {
+    overseerr: {
+        apiVersion: "v1"
+        kind:       "Service"
+        metadata: {
+            labels: {
+                "app.kubernetes.io/name":      "overseerr"
+                "app.kubernetes.io/part-of":   "overseerr"
+                "app.kubernetes.io/component": "app"
+            }
+            name:      "overseerr"
+            namespace: "overseerr"
+        }
+        spec: {
+            ports: [{
+                name:       "http"
+                port:       5055
+                targetPort: 5055
+                protocol:   "TCP"
+            }]
+            selector: {
+                name:      "overseerr"
+                namespace: "overseerr"
+                labels: {
+                    "app.kubernetes.io/name":      "overseerr"
+                    "app.kubernetes.io/part-of":   "overseerr"
+                    "app.kubernetes.io/component": "app"
+                }
+            }
+            type: "LoadBalancer"
+        }
+    }
+}
+ingress: {
+    overseerr: {
+        apiVersion: "networking.k8s.io/v1"
+        kind:       "Ingress"
+        metadata: {
+            labels: {
+                "app.kubernetes.io/name":      "overseerr"
+                "app.kubernetes.io/part-of":   "overseerr"
+                "app.kubernetes.io/component": "app"
+            }
+            annotations: {
+                "cert-manager.io/cluster-issuer": "letsencrypt"
+            }
+            name:      "overseerr"
+            namespace: "overseerr"
+        }
+        spec: {
+            rules: [{
+                host: "overseerr.home.philipdouglass.com"
+                http: {
+                    paths: [{
+                        path:     "/"
+                        pathType: "Prefix"
+                        backend: {
+                            service: {
+                                name: "overseerr"
+                                port: {
+                                    number: 5055
+                                }
+                            }
+                        }
+                    }]
+                }
+            }]
+            tls: [{
+                hosts: ["overseerr.home.philipdouglass.com"]
+                secretName: "overseerr-tls"
+            }]
+            ingressClassName: "nginx"
+        }
+    }
+}
+daemonSet: {}
+statefulSet: {}
+deployment: {
+    overseerr: {
+        apiVersion: "apps/v1"
+        spec: {
+            replicas:             1
+            revisionHistoryLimit: 2
+            strategy: {
+                type: "Recreate"
+            }
+            selector: {
+                matchLabels: {
+                    name:      "overseerr"
+                    namespace: "overseerr"
+                    labels: {
+                        "app.kubernetes.io/name":      "overseerr"
+                        "app.kubernetes.io/part-of":   "overseerr"
+                        "app.kubernetes.io/component": "app"
+                    }
+                }
+            }
+            template: {
+                spec: {
+                    containers: [{
+                        envFrom: [{
+                            configMapRef: {
+                                name: "env"
+                            }
+                        }]
+                        image: "sctx/overseerr"
+                        ports: [{
+                            containerPort: 5055
+                        }]
+                        name: "overseerr"
+                        volumeMounts: [{
+                            mountPath: "/app/config"
+                            name:      "config"
+                        }]
+                    }]
+                    volumes: [{
+                        name: "config"
+                        persistentVolumeClaim: {
+                            claimName: "config"
+                        }
+                    }]
+                }
+                metadata: {
+                    labels: {
+                        name:      "overseerr"
+                        namespace: "overseerr"
+                        labels: {
+                            "app.kubernetes.io/name":      "overseerr"
+                            "app.kubernetes.io/part-of":   "overseerr"
+                            "app.kubernetes.io/component": "app"
+                        }
+                    }
+                }
+            }
+        }
+        metadata: {
+            name:      "overseerr"
+            namespace: "overseerr"
+            labels: {
+                "app.kubernetes.io/name":      "overseerr"
+                "app.kubernetes.io/part-of":   "overseerr"
+                "app.kubernetes.io/component": "app"
+            }
+        }
+        kind: "Deployment"
+    }
+}
+// ---
+namespace: {}
+persistentVolume: {
+    data: {
+        apiVersion: "v1"
+        kind:       "PersistentVolume"
+        spec: {
+            accessModes: ["ReadWriteOnce"]
+            capacity: {
+                storage: "200Gi"
+            }
+            claimRef: {
+                apiVersion: "v1"
+                kind:       "PersistentVolumeClaim"
+                name:       "data"
+                namespace:  "plex"
+            }
+            storageClassName: "microk8s-hostpath"
+            hostPath: {
+                path: "/srv/data/media"
+            }
+        }
+        metadata: {
+            labels: {
+                "app.kubernetes.io/name":      "plex"
+                "app.kubernetes.io/part-of":   "plex"
+                "app.kubernetes.io/component": "app"
+            }
+            name:      "data"
+            namespace: "plex"
+        }
+    }
+    config: {
+        apiVersion: "v1"
+        kind:       "PersistentVolume"
+        metadata: {
+            labels: {
+                "app.kubernetes.io/name":      "plex"
+                "app.kubernetes.io/part-of":   "plex"
+                "app.kubernetes.io/component": "app"
+            }
+            name:      "config"
+            namespace: "plex"
+        }
+        spec: {
+            accessModes: ["ReadWriteOnce"]
+            capacity: {
+                storage: "1Gi"
+            }
+            claimRef: {
+                apiVersion: "v1"
+                kind:       "PersistentVolumeClaim"
+                name:       "config"
+                namespace:  "plex"
+            }
+            storageClassName: "microk8s-hostpath"
+            hostPath: {
+                path: "/srv/data/plex"
+            }
+        }
+    }
+}
+persistentVolumeClaim: {
+    data: {
+        apiVersion: "v1"
+        kind:       "PersistentVolumeClaim"
+        spec: {
+            accessModes: ["ReadWriteOnce"]
+            resources: {
+                requests: {
+                    storage: "200Gi"
+                }
+            }
+            storageClassName: "microk8s-hostpath"
+            volumeName:       "data"
+        }
+        metadata: {
+            labels: {
+                "app.kubernetes.io/name":      "plex"
+                "app.kubernetes.io/part-of":   "plex"
+                "app.kubernetes.io/component": "app"
+            }
+            name:      "data"
+            namespace: "plex"
+        }
+    }
+    config: {
+        apiVersion: "v1"
+        kind:       "PersistentVolumeClaim"
+        metadata: {
+            labels: {
+                "app.kubernetes.io/name":      "plex"
+                "app.kubernetes.io/part-of":   "plex"
+                "app.kubernetes.io/component": "app"
+            }
+            name:      "config"
+            namespace: "plex"
+        }
+        spec: {
+            accessModes: ["ReadWriteOnce"]
+            resources: {
+                requests: {
+                    storage: "1Gi"
+                }
+            }
+            storageClassName: "microk8s-hostpath"
+            volumeName:       "config"
+        }
+    }
+}
+postgreSQLUser: {}
+configMap: {
+    env: {
+        apiVersion: "v1"
+        kind:       "ConfigMap"
+        data: {
+            TZ:         "America/New York"
+            PLEX_CLAIM: "claim-G9pYGjEajwkEpJwGpFEp"
+        }
+        metadata: {
+            name:      "env"
+            namespace: "plex"
+            labels: {
+                "app.kubernetes.io/name":      "plex"
+                "app.kubernetes.io/part-of":   "plex"
+                "app.kubernetes.io/component": "app"
+            }
+        }
+    }
+}
+secret: {}
+service: {
+    plex: {
+        apiVersion: "v1"
+        kind:       "Service"
+        metadata: {
+            labels: {
+                "app.kubernetes.io/name":      "plex"
+                "app.kubernetes.io/part-of":   "plex"
+                "app.kubernetes.io/component": "app"
+            }
+            name:      "plex"
+            namespace: "plex"
+        }
+        spec: {
+            ports: [{
+                name:       "http"
+                port:       32400
+                targetPort: 32400
+                protocol:   "TCP"
+            }]
+            selector: {
+                name:      "plex"
+                namespace: "plex"
+                labels: {
+                    "app.kubernetes.io/name":      "plex"
+                    "app.kubernetes.io/part-of":   "plex"
+                    "app.kubernetes.io/component": "app"
+                }
+            }
+            type: "LoadBalancer"
+        }
+    }
+}
+ingress: {
+    plex: {
+        apiVersion: "networking.k8s.io/v1"
+        kind:       "Ingress"
+        metadata: {
+            labels: {
+                "app.kubernetes.io/name":      "plex"
+                "app.kubernetes.io/part-of":   "plex"
+                "app.kubernetes.io/component": "app"
+            }
+            annotations: {
+                "cert-manager.io/cluster-issuer": "letsencrypt"
+            }
+            name:      "plex"
+            namespace: "plex"
+        }
+        spec: {
+            rules: [{
+                host: "plex.home.philipdouglass.com"
+                http: {
+                    paths: [{
+                        path:     "/"
+                        pathType: "Prefix"
+                        backend: {
+                            service: {
+                                name: "plex"
+                                port: {
+                                    number: 32400
+                                }
+                            }
+                        }
+                    }]
+                }
+            }]
+            tls: [{
+                hosts: ["plex.home.philipdouglass.com"]
+                secretName: "plex-tls"
+            }]
+            ingressClassName: "nginx"
+        }
+    }
+}
+daemonSet: {}
+statefulSet: {}
+deployment: {
+    plex: {
+        apiVersion: "apps/v1"
+        spec: {
+            replicas:             1
+            revisionHistoryLimit: 2
+            strategy: {
+                type: "Recreate"
+            }
+            selector: {
+                matchLabels: {
+                    name:      "plex"
+                    namespace: "plex"
+                    labels: {
+                        "app.kubernetes.io/name":      "plex"
+                        "app.kubernetes.io/part-of":   "plex"
+                        "app.kubernetes.io/component": "app"
+                    }
+                }
+            }
+            template: {
+                spec: {
+                    containers: [{
+                        envFrom: [{
+                            configMapRef: {
+                                name: "env"
+                            }
+                        }]
+                        image:           "plexinc/pms-docker:plexpass"
+                        imagePullPolicy: "Always"
+                        ports: [{
+                            containerPort: 32400
+                        }]
+                        livenessProbe: {
+                            initialDelaySeconds: 0
+                            failureThreshold:    3
+                            timeoutSeconds:      1
+                            tcpSocket: {
+                                port: 32400
+                            }
+                            periodSeconds: 10
+                        }
+                        readinessProbe: {
+                            initialDelaySeconds: 0
+                            failureThreshold:    3
+                            timeoutSeconds:      1
+                            tcpSocket: {
+                                port: 32400
+                            }
+                            periodSeconds: 10
+                        }
+                        startupProbe: {
+                            initialDelaySeconds: 0
+                            failureThreshold:    30
+                            timeoutSeconds:      1
+                            tcpSocket: {
+                                port: 32400
+                            }
+                            periodSeconds: 5
+                        }
+                        stdin: true
+                        tty:   true
+                        name:  "plex"
+                        volumeMounts: [{
+                            mountPath: "/config"
+                            name:      "config"
+                        }, {
+                            mountPath: "/transcode"
+                            name:      "transcode"
+                        }, {
+                            mountPath: "/data"
+                            name:      "data"
+                        }]
+                    }]
+                    volumes: [{
+                        name: "config"
+                        persistentVolumeClaim: {
+                            claimName: "config"
+                        }
+                    }, {
+                        name: "transcode"
+                        emptyDir: {}
+                    }, {
+                        name: "data"
+                        persistentVolumeClaim: {
+                            claimName: "data"
+                        }
+                    }]
+                }
+                metadata: {
+                    labels: {
+                        name:      "plex"
+                        namespace: "plex"
+                        labels: {
+                            "app.kubernetes.io/name":      "plex"
+                            "app.kubernetes.io/part-of":   "plex"
+                            "app.kubernetes.io/component": "app"
+                        }
+                    }
+                }
+            }
+        }
+        metadata: {
+            name:      "plex"
+            namespace: "plex"
+            labels: {
+                "app.kubernetes.io/name":      "plex"
+                "app.kubernetes.io/part-of":   "plex"
+                "app.kubernetes.io/component": "app"
+            }
+        }
+        kind: "Deployment"
+    }
+}
+// ---
+namespace: {}
+persistentVolume: {
+    data: {
+        apiVersion: "v1"
+        kind:       "PersistentVolume"
+        metadata: {
+            labels: {
+                "app.kubernetes.io/name":      "postgres"
+                "app.kubernetes.io/part-of":   "postgres"
+                "app.kubernetes.io/component": "app"
+            }
+            name:      "data"
+            namespace: "postgres"
+        }
+        spec: {
+            accessModes: ["ReadWriteOnce"]
+            capacity: {
+                storage: "1Gi"
+            }
+            claimRef: {
+                apiVersion: "v1"
+                kind:       "PersistentVolumeClaim"
+                name:       "data"
+                namespace:  "postgres"
+            }
+            storageClassName: "microk8s-hostpath"
+            hostPath: {
+                path: "/srv/data/postgres"
+            }
+        }
+    }
+}
+persistentVolumeClaim: {
+    data: {
+        apiVersion: "v1"
+        kind:       "PersistentVolumeClaim"
+        metadata: {
+            labels: {
+                "app.kubernetes.io/name":      "postgres"
+                "app.kubernetes.io/part-of":   "postgres"
+                "app.kubernetes.io/component": "app"
+            }
+            name:      "data"
+            namespace: "postgres"
+        }
+        spec: {
+            accessModes: ["ReadWriteOnce"]
+            resources: {
+                requests: {
+                    storage: "1Gi"
+                }
+            }
+            storageClassName: "microk8s-hostpath"
+            volumeName:       "data"
+        }
+    }
+}
+postgreSQLUser: {}
+configMap: {
+    env: {
+        apiVersion: "v1"
+        kind:       "ConfigMap"
+        data: {
+            OPERATOR_NAME:             "postgres-user-operator"
+            POSTGRES_USERNAME:         "postgres"
+            POSTGRES_HOST_AUTH_METHOD: "trust"
+        }
+        metadata: {
+            name:      "env"
+            namespace: "postgres"
+            labels: {
+                "app.kubernetes.io/name":      "postgres"
+                "app.kubernetes.io/part-of":   "postgres"
+                "app.kubernetes.io/component": "app"
+            }
+        }
+    }
+}
+secret: {
+    env: {
+        apiVersion: "v1"
+        kind:       "Secret"
+        data: {
+            POSTGRES_PASSWORD: "SVp6eXVaZDhaZXZZRFRMMkFONnYK"
+        }
+        metadata: {
+            name:      "env"
+            namespace: "postgres"
+            labels: {
+                "app.kubernetes.io/name":      "postgres"
+                "app.kubernetes.io/part-of":   "postgres"
+                "app.kubernetes.io/component": "app"
+            }
+        }
+        type: "Opaque"
+    }
+}
+service: {
+    postgres: {
+        apiVersion: "v1"
+        kind:       "Service"
+        metadata: {
+            labels: {
+                "app.kubernetes.io/name":      "postgres"
+                "app.kubernetes.io/part-of":   "postgres"
+                "app.kubernetes.io/component": "app"
+            }
+            name:      "postgres"
+            namespace: "postgres"
+        }
+        spec: {
+            ports: [{
+                name:       "tcp-postgresql"
+                port:       5432
+                targetPort: 5432
+                protocol:   "TCP"
+            }]
+            selector: {
+                name:      "postgres"
+                namespace: "postgres"
+                labels: {
+                    "app.kubernetes.io/name":      "postgres"
+                    "app.kubernetes.io/part-of":   "postgres"
+                    "app.kubernetes.io/component": "app"
+                }
+            }
+            type: "LoadBalancer"
+        }
+    }
+}
+ingress: {}
+daemonSet: {}
+statefulSet: {
+    postgres: {
+        apiVersion: "apps/v1"
+        kind:       "StatefulSet"
+        spec: {
+            replicas:             1
+            revisionHistoryLimit: 2
+            strategy: {
+                type: "Recreate"
+            }
+            selector: {
+                matchLabels: {
+                    name:      "postgres"
+                    namespace: "postgres"
+                    labels: {
+                        "app.kubernetes.io/name":      "postgres"
+                        "app.kubernetes.io/part-of":   "postgres"
+                        "app.kubernetes.io/component": "app"
+                    }
+                }
+            }
+            serviceName: "postgres-hl"
+            template: {
+                spec: {
+                    containers: [{
+                        image: "postgres:16.0"
+                        envFrom: [{
+                            configMapRef: {
+                                name: "env"
+                            }
+                        }]
+                        env: [{
+                            name: "POSTGRES_PASSWORD"
+                            valueFrom: {
+                                secretKeyRef: {
+                                    key:  "POSTGRES_PASSWORD"
+                                    name: "env"
+                                }
+                            }
+                        }]
+                        ports: [{
+                            containerPort: 5432
+                            name:          "tcp-postgresql"
+                        }]
+                        name: "postgres"
+                        resources: {
+                            requests: {
+                                cpu:    "250m"
+                                memory: "256Mi"
+                            }
+                        }
+                        volumeMounts: [{
+                            mountPath: "/dev/shm"
+                            name:      "dshm"
+                        }, {
+                            mountPath: "/var/lib/postgresql/data"
+                            name:      "data"
+                        }]
+                    }]
+                    volumes: [{
+                        name: "dshm"
+                        emptyDir: {}
+                    }, {
+                        name: "data"
+                        persistentVolumeClaim: {
+                            claimName: "data"
+                        }
+                    }]
+                }
+                metadata: {
+                    labels: {
+                        name:      "postgres"
+                        namespace: "postgres"
+                        labels: {
+                            "app.kubernetes.io/name":      "postgres"
+                            "app.kubernetes.io/part-of":   "postgres"
+                            "app.kubernetes.io/component": "app"
+                        }
+                    }
+                }
+            }
+        }
+        metadata: {
+            name:      "postgres"
+            namespace: "postgres"
+            labels: {
+                "app.kubernetes.io/name":      "postgres"
+                "app.kubernetes.io/part-of":   "postgres"
+                "app.kubernetes.io/component": "app"
+            }
+        }
+    }
+}
+deployment: {
+    "postgres-user-operator": {
+        apiVersion: "apps/v1"
+        metadata: {
+            labels: {
+                "app.kubernetes.io/name":      "postgres"
+                "app.kubernetes.io/part-of":   "postgres"
+                "app.kubernetes.io/component": "postgres-user-operator"
+            }
+            name:      "postgres-user-operator"
+            namespace: "postgres"
+        }
+        spec: {
+            replicas:             1
+            revisionHistoryLimit: 2
+            strategy: {
+                type: "Recreate"
+            }
+            selector: {
+                matchLabels: {
+                    labels: {
+                        "app.kubernetes.io/name":      "postgres"
+                        "app.kubernetes.io/part-of":   "postgres"
+                        "app.kubernetes.io/component": "postgres-user-operator"
+                    }
+                    name:      "postgres-user-operator"
+                    namespace: "postgres"
+                }
+            }
+            template: {
+                spec: {
+                    containers: [{
+                        image: "ghcr.io/philipsd6/postgres-user-operator"
+                        envFrom: [{
+                            configMapRef: {
+                                name: "env"
+                            }
+                        }]
+                        name: "postgres-user-operator"
+                        ports: []
+                        env: [{
+                            name: "POSTGRES_NAMESPACE"
+                            valueFrom: {
+                                fieldRef: {
+                                    fieldPath: "metadata.namespace"
+                                }
+                            }
+                        }]
+                        volumeMounts: []
+                    }]
+                    volumes: []
+                }
+                metadata: {
+                    labels: {
+                        labels: {
+                            "app.kubernetes.io/name":      "postgres"
+                            "app.kubernetes.io/part-of":   "postgres"
+                            "app.kubernetes.io/component": "postgres-user-operator"
+                        }
+                        name:      "postgres-user-operator"
+                        namespace: "postgres"
+                    }
+                }
+            }
+        }
+        kind: "Deployment"
+    }
+}
+// ---
+namespace: {}
+persistentVolume: {
+    config: {
+        apiVersion: "v1"
+        kind:       "PersistentVolume"
+        metadata: {
+            labels: {
+                "app.kubernetes.io/name":      "radarr"
+                "app.kubernetes.io/part-of":   "radarr"
+                "app.kubernetes.io/component": "app"
+            }
+            name:      "config"
+            namespace: "radarr"
+        }
+        spec: {
+            accessModes: ["ReadWriteOnce"]
+            capacity: {
+                storage: "1Gi"
+            }
+            claimRef: {
+                apiVersion: "v1"
+                kind:       "PersistentVolumeClaim"
+                name:       "config"
+                namespace:  "radarr"
+            }
+            storageClassName: "microk8s-hostpath"
+            hostPath: {
+                path: "/srv/data/radarr"
+            }
+        }
+    }
+    data: {
+        apiVersion: "v1"
+        kind:       "PersistentVolume"
+        metadata: {
+            labels: {
+                "app.kubernetes.io/name":      "radarr"
+                "app.kubernetes.io/part-of":   "radarr"
+                "app.kubernetes.io/component": "app"
+            }
+            name:      "data"
+            namespace: "radarr"
+        }
+        spec: {
+            accessModes: ["ReadWriteOnce"]
+            capacity: {
+                storage: "1Gi"
+            }
+            claimRef: {
+                apiVersion: "v1"
+                kind:       "PersistentVolumeClaim"
+                name:       "data"
+                namespace:  "radarr"
+            }
+            storageClassName: "microk8s-hostpath"
+            hostPath: {
+                path: "/srv/data/radarr"
+            }
+        }
+    }
+}
+persistentVolumeClaim: {
+    config: {
+        apiVersion: "v1"
+        kind:       "PersistentVolumeClaim"
+        metadata: {
+            labels: {
+                "app.kubernetes.io/name":      "radarr"
+                "app.kubernetes.io/part-of":   "radarr"
+                "app.kubernetes.io/component": "app"
+            }
+            name:      "config"
+            namespace: "radarr"
+        }
+        spec: {
+            accessModes: ["ReadWriteOnce"]
+            resources: {
+                requests: {
+                    storage: "1Gi"
+                }
+            }
+            storageClassName: "microk8s-hostpath"
+            volumeName:       "config"
+        }
+    }
+    data: {
+        apiVersion: "v1"
+        kind:       "PersistentVolumeClaim"
+        metadata: {
+            labels: {
+                "app.kubernetes.io/name":      "radarr"
+                "app.kubernetes.io/part-of":   "radarr"
+                "app.kubernetes.io/component": "app"
+            }
+            name:      "data"
+            namespace: "radarr"
+        }
+        spec: {
+            accessModes: ["ReadWriteOnce"]
+            resources: {
+                requests: {
+                    storage: "1Gi"
+                }
+            }
+            storageClassName: "microk8s-hostpath"
+            volumeName:       "data"
+        }
+    }
+}
+postgreSQLUser: {}
+configMap: {
+    env: {
+        apiVersion: "v1"
+        kind:       "ConfigMap"
+        data: {
+            PGID:  "1000"
+            PUID:  "1000"
+            TZ:    "America/New York"
+            UMASK: "002"
+        }
+        metadata: {
+            name:      "env"
+            namespace: "radarr"
+            labels: {
+                "app.kubernetes.io/name":      "radarr"
+                "app.kubernetes.io/part-of":   "radarr"
+                "app.kubernetes.io/component": "app"
+            }
+        }
+    }
+}
+secret: {}
+service: {
+    radarr: {
+        apiVersion: "v1"
+        kind:       "Service"
+        metadata: {
+            labels: {
+                "app.kubernetes.io/name":      "radarr"
+                "app.kubernetes.io/part-of":   "radarr"
+                "app.kubernetes.io/component": "app"
+            }
+            name:      "radarr"
+            namespace: "radarr"
+        }
+        spec: {
+            ports: [{
+                name:       "http"
+                port:       7878
+                targetPort: 7878
+                protocol:   "TCP"
+            }]
+            selector: {
+                name:      "radarr"
+                namespace: "radarr"
+                labels: {
+                    "app.kubernetes.io/name":      "radarr"
+                    "app.kubernetes.io/part-of":   "radarr"
+                    "app.kubernetes.io/component": "app"
+                }
+            }
+            type: "LoadBalancer"
+        }
+    }
+}
+ingress: {
+    radarr: {
+        apiVersion: "networking.k8s.io/v1"
+        kind:       "Ingress"
+        metadata: {
+            labels: {
+                "app.kubernetes.io/name":      "radarr"
+                "app.kubernetes.io/part-of":   "radarr"
+                "app.kubernetes.io/component": "app"
+            }
+            annotations: {
+                "cert-manager.io/cluster-issuer": "letsencrypt"
+            }
+            name:      "radarr"
+            namespace: "radarr"
+        }
+        spec: {
+            rules: [{
+                host: "radarr.home.philipdouglass.com"
+                http: {
+                    paths: [{
+                        path:     "/"
+                        pathType: "Prefix"
+                        backend: {
+                            service: {
+                                name: "radarr"
+                                port: {
+                                    number: 7878
+                                }
+                            }
+                        }
+                    }]
+                }
+            }]
+            tls: [{
+                hosts: ["radarr.home.philipdouglass.com"]
+                secretName: "radarr-tls"
+            }]
+            ingressClassName: "nginx"
+        }
+    }
+}
+daemonSet: {}
+statefulSet: {}
+deployment: {
+    radarr: {
+        apiVersion: "apps/v1"
+        spec: {
+            replicas:             1
+            revisionHistoryLimit: 2
+            strategy: {
+                type: "Recreate"
+            }
+            selector: {
+                matchLabels: {
+                    name:      "radarr"
+                    namespace: "radarr"
+                    labels: {
+                        "app.kubernetes.io/name":      "radarr"
+                        "app.kubernetes.io/part-of":   "radarr"
+                        "app.kubernetes.io/component": "app"
+                    }
+                }
+            }
+            template: {
+                spec: {
+                    containers: [{
+                        envFrom: [{
+                            configMapRef: {
+                                name: "env"
+                            }
+                        }]
+                        image: "hotio/radarr"
+                        ports: [{
+                            containerPort: 7878
+                        }]
+                        name: "radarr"
+                        volumeMounts: [{
+                            mountPath: "/config"
+                            name:      "config"
+                        }, {
+                            mountPath: "/data"
+                            name:      "data"
+                        }]
+                    }]
+                    volumes: [{
+                        name: "config"
+                        persistentVolumeClaim: {
+                            claimName: "config"
+                        }
+                    }, {
+                        name: "data"
+                        persistentVolumeClaim: {
+                            claimName: "data"
+                        }
+                    }]
+                }
+                metadata: {
+                    labels: {
+                        name:      "radarr"
+                        namespace: "radarr"
+                        labels: {
+                            "app.kubernetes.io/name":      "radarr"
+                            "app.kubernetes.io/part-of":   "radarr"
+                            "app.kubernetes.io/component": "app"
+                        }
+                    }
+                }
+            }
+        }
+        metadata: {
+            name:      "radarr"
+            namespace: "radarr"
+            labels: {
+                "app.kubernetes.io/name":      "radarr"
+                "app.kubernetes.io/part-of":   "radarr"
+                "app.kubernetes.io/component": "app"
+            }
+        }
+        kind: "Deployment"
+    }
+}
+// ---
+namespace: {}
+persistentVolume: {
+    config: {
+        apiVersion: "v1"
+        kind:       "PersistentVolume"
+        metadata: {
+            labels: {
+                "app.kubernetes.io/name":      "sonarr"
+                "app.kubernetes.io/part-of":   "sonarr"
+                "app.kubernetes.io/component": "app"
+            }
+            name:      "config"
+            namespace: "sonarr"
+        }
+        spec: {
+            accessModes: ["ReadWriteOnce"]
+            capacity: {
+                storage: "1Gi"
+            }
+            claimRef: {
+                apiVersion: "v1"
+                kind:       "PersistentVolumeClaim"
+                name:       "config"
+                namespace:  "sonarr"
+            }
+            storageClassName: "microk8s-hostpath"
+            hostPath: {
+                path: "/srv/data/sonarr"
+            }
+        }
+    }
+    data: {
+        apiVersion: "v1"
+        kind:       "PersistentVolume"
+        metadata: {
+            labels: {
+                "app.kubernetes.io/name":      "sonarr"
+                "app.kubernetes.io/part-of":   "sonarr"
+                "app.kubernetes.io/component": "app"
+            }
+            name:      "data"
+            namespace: "sonarr"
+        }
+        spec: {
+            accessModes: ["ReadWriteOnce"]
+            capacity: {
+                storage: "1Gi"
+            }
+            claimRef: {
+                apiVersion: "v1"
+                kind:       "PersistentVolumeClaim"
+                name:       "data"
+                namespace:  "sonarr"
+            }
+            storageClassName: "microk8s-hostpath"
+            hostPath: {
+                path: "/srv/data/sonarr"
+            }
+        }
+    }
+}
+persistentVolumeClaim: {
+    config: {
+        apiVersion: "v1"
+        kind:       "PersistentVolumeClaim"
+        metadata: {
+            labels: {
+                "app.kubernetes.io/name":      "sonarr"
+                "app.kubernetes.io/part-of":   "sonarr"
+                "app.kubernetes.io/component": "app"
+            }
+            name:      "config"
+            namespace: "sonarr"
+        }
+        spec: {
+            accessModes: ["ReadWriteOnce"]
+            resources: {
+                requests: {
+                    storage: "1Gi"
+                }
+            }
+            storageClassName: "microk8s-hostpath"
+            volumeName:       "config"
+        }
+    }
+    data: {
+        apiVersion: "v1"
+        kind:       "PersistentVolumeClaim"
+        metadata: {
+            labels: {
+                "app.kubernetes.io/name":      "sonarr"
+                "app.kubernetes.io/part-of":   "sonarr"
+                "app.kubernetes.io/component": "app"
+            }
+            name:      "data"
+            namespace: "sonarr"
+        }
+        spec: {
+            accessModes: ["ReadWriteOnce"]
+            resources: {
+                requests: {
+                    storage: "1Gi"
+                }
+            }
+            storageClassName: "microk8s-hostpath"
+            volumeName:       "data"
+        }
+    }
+}
+postgreSQLUser: {}
+configMap: {
+    env: {
+        apiVersion: "v1"
+        kind:       "ConfigMap"
+        data: {
+            PGID:  "1000"
+            PUID:  "1000"
+            TZ:    "America/New York"
+            UMASK: "002"
+        }
+        metadata: {
+            name:      "env"
+            namespace: "sonarr"
+            labels: {
+                "app.kubernetes.io/name":      "sonarr"
+                "app.kubernetes.io/part-of":   "sonarr"
+                "app.kubernetes.io/component": "app"
+            }
+        }
+    }
+}
+secret: {}
+service: {
+    sonarr: {
+        apiVersion: "v1"
+        kind:       "Service"
+        metadata: {
+            labels: {
+                "app.kubernetes.io/name":      "sonarr"
+                "app.kubernetes.io/part-of":   "sonarr"
+                "app.kubernetes.io/component": "app"
+            }
+            name:      "sonarr"
+            namespace: "sonarr"
+        }
+        spec: {
+            ports: [{
+                name:       "http"
+                port:       8989
+                targetPort: 8989
+                protocol:   "TCP"
+            }]
+            selector: {
+                name:      "sonarr"
+                namespace: "sonarr"
+                labels: {
+                    "app.kubernetes.io/name":      "sonarr"
+                    "app.kubernetes.io/part-of":   "sonarr"
+                    "app.kubernetes.io/component": "app"
+                }
+            }
+            type: "LoadBalancer"
+        }
+    }
+}
+ingress: {
+    sonarr: {
+        apiVersion: "networking.k8s.io/v1"
+        kind:       "Ingress"
+        metadata: {
+            labels: {
+                "app.kubernetes.io/name":      "sonarr"
+                "app.kubernetes.io/part-of":   "sonarr"
+                "app.kubernetes.io/component": "app"
+            }
+            annotations: {
+                "cert-manager.io/cluster-issuer": "letsencrypt"
+            }
+            name:      "sonarr"
+            namespace: "sonarr"
+        }
+        spec: {
+            rules: [{
+                host: "sonarr.home.philipdouglass.com"
+                http: {
+                    paths: [{
+                        path:     "/"
+                        pathType: "Prefix"
+                        backend: {
+                            service: {
+                                name: "sonarr"
+                                port: {
+                                    number: 8989
+                                }
+                            }
+                        }
+                    }]
+                }
+            }]
+            tls: [{
+                hosts: ["sonarr.home.philipdouglass.com"]
+                secretName: "sonarr-tls"
+            }]
+            ingressClassName: "nginx"
+        }
+    }
+}
+daemonSet: {}
+statefulSet: {}
+deployment: {
+    sonarr: {
+        apiVersion: "apps/v1"
+        spec: {
+            replicas:             1
+            revisionHistoryLimit: 2
+            strategy: {
+                type: "Recreate"
+            }
+            selector: {
+                matchLabels: {
+                    name:      "sonarr"
+                    namespace: "sonarr"
+                    labels: {
+                        "app.kubernetes.io/name":      "sonarr"
+                        "app.kubernetes.io/part-of":   "sonarr"
+                        "app.kubernetes.io/component": "app"
+                    }
+                }
+            }
+            template: {
+                spec: {
+                    containers: [{
+                        envFrom: [{
+                            configMapRef: {
+                                name: "env"
+                            }
+                        }]
+                        image: "hotio/sonarr"
+                        ports: [{
+                            containerPort: 8989
+                        }]
+                        name: "sonarr"
+                        volumeMounts: [{
+                            mountPath: "/config"
+                            name:      "config"
+                        }, {
+                            mountPath: "/data"
+                            name:      "data"
+                        }]
+                    }]
+                    volumes: [{
+                        name: "config"
+                        persistentVolumeClaim: {
+                            claimName: "config"
+                        }
+                    }, {
+                        name: "data"
+                        persistentVolumeClaim: {
+                            claimName: "data"
+                        }
+                    }]
+                }
+                metadata: {
+                    labels: {
+                        name:      "sonarr"
+                        namespace: "sonarr"
+                        labels: {
+                            "app.kubernetes.io/name":      "sonarr"
+                            "app.kubernetes.io/part-of":   "sonarr"
+                            "app.kubernetes.io/component": "app"
+                        }
+                    }
+                }
+            }
+        }
+        metadata: {
+            name:      "sonarr"
+            namespace: "sonarr"
+            labels: {
+                "app.kubernetes.io/name":      "sonarr"
+                "app.kubernetes.io/part-of":   "sonarr"
+                "app.kubernetes.io/component": "app"
+            }
+        }
+        kind: "Deployment"
+    }
+}
+// ---
+namespace: {}
+persistentVolume: {
+    data: {
+        apiVersion: "v1"
+        kind:       "PersistentVolume"
+        metadata: {
+            labels: {
+                "app.kubernetes.io/name":      "teslamate"
+                "app.kubernetes.io/part-of":   "teslamate"
+                "app.kubernetes.io/component": "app"
+            }
+            name:      "data"
+            namespace: "teslamate"
+        }
+        spec: {
+            accessModes: ["ReadWriteOnce"]
+            capacity: {
+                storage: "1Gi"
+            }
+            claimRef: {
+                apiVersion: "v1"
+                kind:       "PersistentVolumeClaim"
+                name:       "data"
+                namespace:  "teslamate"
+            }
+            storageClassName: "microk8s-hostpath"
+            hostPath: {
+                path: "/srv/data/teslamate"
+            }
+        }
+    }
+}
+persistentVolumeClaim: {
+    data: {
+        apiVersion: "v1"
+        kind:       "PersistentVolumeClaim"
+        metadata: {
+            labels: {
+                "app.kubernetes.io/name":      "teslamate"
+                "app.kubernetes.io/part-of":   "teslamate"
+                "app.kubernetes.io/component": "app"
+            }
+            name:      "data"
+            namespace: "teslamate"
+        }
+        spec: {
+            accessModes: ["ReadWriteOnce"]
+            resources: {
+                requests: {
+                    storage: "1Gi"
+                }
+            }
+            storageClassName: "microk8s-hostpath"
+            volumeName:       "data"
+        }
+    }
+}
+postgreSQLUser: {
+    teslamate: {
+        apiVersion: "philipdouglass.com/v1"
+        kind:       "PostgreSQLUser"
+        metadata: {
+            labels: {
+                "app.kubernetes.io/name":      "teslamate"
+                "app.kubernetes.io/part-of":   "teslamate"
+                "app.kubernetes.io/component": "database"
+            }
+            name:      "teslamate"
+            namespace: "teslamate"
+        }
+        spec: {
+            superuser: true
+            db: {
+                valueFrom: {
+                    configMapKeyRef: {
+                        name: "env"
+                        key:  "DATABASE_NAME"
+                    }
+                }
+            }
+            username: {
+                valueFrom: {
+                    configMapKeyRef: {
+                        name: "env"
+                        key:  "DATABASE_USER"
+                    }
+                }
+            }
+            password: {
+                valueFrom: {
+                    secretKeyRef: {
+                        name: "teslamate"
+                        key:  "databasePassword"
+                    }
+                }
+            }
+        }
+    }
+}
+configMap: {
+    env: {
+        apiVersion: "v1"
+        kind:       "ConfigMap"
+        data: {
+            TZ:            "America/New_York"
+            DATABASE_HOST: "postgres.postgres.svc.cluster.local"
+            DATABASE_NAME: "teslamate"
+            DATABASE_USER: "teslamate"
+            DISABLE_MQTT:  "false"
+            MQTT_HOST:     "mosquitto.mosquitto.svc.cluster.local"
+        }
+        metadata: {
+            name:      "env"
+            namespace: "teslamate"
+            labels: {
+                "app.kubernetes.io/name":      "teslamate"
+                "app.kubernetes.io/part-of":   "teslamate"
+                "app.kubernetes.io/component": "app"
+            }
+        }
+    }
+}
+secret: {
+    teslamate: {
+        apiVersion: "v1"
+        kind:       "Secret"
+        data: {
+            auth:             "dHJhY2stcGxhbm5lci1kd2luZGxpbmc6JGFwcjEkNnl2YnJqQlIkdEkuSDRCQVkxb3duTk14ZmxLUWRuLgo="
+            databasePassword: "Y2FsYW1hcmktZGF1Z2h0ZXItcm9wZQo="
+            encryptionKey:    "ZGVhZmVuaW5nLWNoYXJtLWFicmFzaW9uCg=="
+        }
+        metadata: {
+            name:      "teslamate"
+            namespace: "teslamate"
+            labels: {
+                "app.kubernetes.io/name":      "teslamate"
+                "app.kubernetes.io/part-of":   "teslamate"
+                "app.kubernetes.io/component": "app"
+            }
+        }
+        type: "Opaque"
+    }
+}
+service: {
+    teslamate: {
+        apiVersion: "v1"
+        kind:       "Service"
+        metadata: {
+            labels: {
+                "app.kubernetes.io/name":      "teslamate"
+                "app.kubernetes.io/part-of":   "teslamate"
+                "app.kubernetes.io/component": "app"
+            }
+            name:      "teslamate"
+            namespace: "teslamate"
+        }
+        spec: {
+            ports: [{
+                name:       "http"
+                port:       4000
+                targetPort: 4000
+                protocol:   "TCP"
+            }, {
+                name:       "grafana"
+                port:       3000
+                targetPort: 3000
+                protocol:   "TCP"
+            }]
+            selector: {
+                name:      "teslamate"
+                namespace: "teslamate"
+                labels: {
+                    "app.kubernetes.io/name":      "teslamate"
+                    "app.kubernetes.io/part-of":   "teslamate"
+                    "app.kubernetes.io/component": "app"
+                }
+            }
+            type: "LoadBalancer"
+        }
+    }
+}
+ingress: {
+    teslamate: {
+        apiVersion: "networking.k8s.io/v1"
+        kind:       "Ingress"
+        metadata: {
+            annotations: {
+                "nginx.ingress.kubernetes.io/auth-realm":  "Authentication Required"
+                "nginx.ingress.kubernetes.io/auth-secret": "teslamate"
+                "cert-manager.io/cluster-issuer":          "letsencrypt"
+                "nginx.ingress.kubernetes.io/auth-type":   "basic"
+            }
+            labels: {
+                "app.kubernetes.io/name":      "teslamate"
+                "app.kubernetes.io/part-of":   "teslamate"
+                "app.kubernetes.io/component": "app"
+            }
+            name:      "teslamate"
+            namespace: "teslamate"
+        }
+        spec: {
+            rules: [{
+                host: "teslamate.home.philipdouglass.com"
+                http: {
+                    paths: [{
+                        path:     "/"
+                        pathType: "Prefix"
+                        backend: {
+                            service: {
+                                name: "teslamate"
+                                port: {
+                                    number: 4000
+                                }
+                            }
+                        }
+                    }]
+                }
+            }, {
+                host: "grafana.teslamate.home.philipdouglass.com"
+                http: {
+                    paths: [{
+                        path:     "/"
+                        pathType: "Prefix"
+                        backend: {
+                            service: {
+                                name: "teslamate"
+                                port: {
+                                    name: "grafana"
+                                }
+                            }
+                        }
+                    }]
+                }
+            }]
+            tls: [{
+                hosts: ["teslamate.home.philipdouglass.com", "grafana.teslamate.home.philipdouglass.com"]
+                secretName: "teslamate-tls"
+            }]
+            ingressClassName: "nginx"
+        }
+    }
+}
+daemonSet: {}
+statefulSet: {}
+deployment: {
+    teslamate: {
+        apiVersion: "apps/v1"
+        spec: {
+            replicas:             1
+            revisionHistoryLimit: 2
+            strategy: {
+                type: "Recreate"
+            }
+            selector: {
+                matchLabels: {
+                    name:      "teslamate"
+                    namespace: "teslamate"
+                    labels: {
+                        "app.kubernetes.io/name":      "teslamate"
+                        "app.kubernetes.io/part-of":   "teslamate"
+                        "app.kubernetes.io/component": "app"
+                    }
+                }
+            }
+            template: {
+                spec: {
+                    containers: [{
+                        image: "teslamate/teslamate"
+                        env: [{
+                            name: "ENCRYPTION_KEY"
+                            valueFrom: {
+                                secretKeyRef: {
+                                    key:  "encryptionKey"
+                                    name: "teslamate"
+                                }
+                            }
+                        }, {
+                            name: "DATABASE_PASS"
+                            valueFrom: {
+                                secretKeyRef: {
+                                    key:  "databasePassword"
+                                    name: "teslamate"
+                                }
+                            }
+                        }]
+                        envFrom: [{
+                            configMapRef: {
+                                name: "env"
+                            }
+                        }]
+                        name: "teslamate"
+                        ports: [{
+                            containerPort: 4000
+                        }]
+                        volumeMounts: []
+                    }, {
+                        image: "teslamate/grafana"
+                        name:  "grafana"
+                        env: [{
+                            name: "DATABASE_PASS"
+                            valueFrom: {
+                                secretKeyRef: {
+                                    key:  "databasePassword"
+                                    name: "teslamate"
+                                }
+                            }
+                        }]
+                        envFrom: [{
+                            configMapRef: {
+                                name: "env"
+                            }
+                        }]
+                        ports: [{
+                            containerPort: 3000
+                            name:          "grafana"
+                        }]
+                        volumeMounts: [{
+                            mountPath: "/var/lib/grafana"
+                            name:      "data"
+                        }]
+                        resources: {
+                            limits: {}
+                            requests: {}
+                        }
+                    }]
+                    volumes: [{
+                        name: "data"
+                        persistentVolumeClaim: {
+                            claimName: "data"
+                        }
+                    }]
+                }
+                metadata: {
+                    labels: {
+                        name:      "teslamate"
+                        namespace: "teslamate"
+                        labels: {
+                            "app.kubernetes.io/name":      "teslamate"
+                            "app.kubernetes.io/part-of":   "teslamate"
+                            "app.kubernetes.io/component": "app"
+                        }
+                    }
+                }
+            }
+        }
+        metadata: {
+            name:      "teslamate"
+            namespace: "teslamate"
+            labels: {
+                "app.kubernetes.io/name":      "teslamate"
+                "app.kubernetes.io/part-of":   "teslamate"
+                "app.kubernetes.io/component": "app"
+            }
+        }
+        kind: "Deployment"
+    }
+}

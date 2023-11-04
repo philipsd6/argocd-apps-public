@@ -1,0 +1,42 @@
+---
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: github-creds
+  labels:
+    argocd.argoproj.io/secret-type: repo-creds
+spec:
+  refreshInterval: 1h
+  secretStoreRef:
+    name: bitwarden-fields
+    kind: ClusterSecretStore
+  target:
+    deletionPolicy: Delete
+    template:
+      type: Opaque
+      data:
+        url: "{{ .githubProject }}"
+        githubAppID: "{{ .githubAppID }}"
+        githubAppInstallationID: "{{ .githubAppInstallationID }}"
+        githubAppPrivateKey: "{{ .githubAppPrivateKey }}"
+  data:
+    - secretKey: githubProject
+      remoteRef:
+        key: 0cb5c601-f19b-4f22-9b48-5a273e9af776
+        property: githubProject
+    - secretKey: githubAppID
+      remoteRef:
+        key: 0cb5c601-f19b-4f22-9b48-5a273e9af776
+        property: githubAppID
+    - secretKey: githubAppInstallationID
+      remoteRef:
+        key: 0cb5c601-f19b-4f22-9b48-5a273e9af776
+        property: githubAppInstallationID
+    - secretKey: githubAppPrivateKey
+      sourceRef:
+        storeRef:
+          name: bitwarden-attachments
+          kind: ClusterSecretStore
+      remoteRef:
+        key: 0cb5c601-f19b-4f22-9b48-5a273e9af776
+        property: githubAppPrivateKey.rsa

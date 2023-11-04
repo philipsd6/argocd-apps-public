@@ -1,0 +1,31 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: argocd
+
+resources:
+  - namespace.yaml
+  - https://raw.githubusercontent.com/argoproj/argo-cd/master/manifests/install.yaml
+
+commonAnnotations:
+  app.kubernetes.io/part-of: argocd
+
+configMapGenerator:
+  - name: cue-plugin-config
+    files:
+      - plugin.yaml
+      - install_deps.sh
+
+generatorOptions:
+  disableNameSuffixHash: true
+
+patches:
+  - path: argocd-repo-server-deployment-patch.yaml
+  - target:
+      name: argocd-dex-server
+    patch: |
+      $patch: delete
+      kind: Kustomization
+      metadata:
+        name: argocd-dex-server

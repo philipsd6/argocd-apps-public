@@ -1,0 +1,14 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ConfigManagementPlugin
+metadata:
+  name: cue-cmp
+spec:
+  version: v1.0
+  generate:
+    command: [argocue, generate]
+  discover:
+    fileName: "./*.cue"
+  parameters:
+    dynamic:
+      command: [argocue, get_parameters]

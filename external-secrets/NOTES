@@ -1,0 +1,30 @@
+# Notes
+TODO, make a makefile that does this:
+
+1. helm repo add external-secrets https://charts.external-secrets.io
+2. helm fetch --untar --untardir charts external-secrets/external-secrets -n external-secrets
+3. helm template --output-dir base --namespace external-secrets external-secrets charts/external-secrets
+3. mv base/external-secrets/templates/* base/
+4. rm -rf base/external-secrets
+5. sed 's/argocd/external-secrets/g' ../argocd/base/namespace.yaml > base/external-secrets/namespace.yaml
+6. cd base && kustomize create --autodetect --recursive --namespace external-secrets --labels "app.kubernetes.io/managed-by:kustomize"
+7. rm -rf charts
+
+Then adjust kustomization.yaml as desired...
+
+Or... from the repo...
+
+1. cd ~/devel
+2. gh repo clone external-secrets/external-secrets
+3. cd external-secrets/
+4. make manifests
+   # Last step of that runs this:
+   helm template external-secrets deploy/charts/external-secrets -f deploy/manifests/helm-values.yaml > bin/deploy/manifests/external-secrets.yaml
+   # But I want to adjust a few things so -- rerun that as:
+5. helm template external-secrets deploy/charts/external-secrets -f deploy/manifests/helm-values.yaml --set revisionHistoryLimit=3,webhook.revisionHistoryLimit=3,certController.revisionHistoryLimit=3> ~/devel/argocd-apps/external-secrets/base/manifest.yaml --namespace external-secrets
+6. mkdir -p ~/devel/argocd-apps/external-secrets/base; cd ~/devel/argocd-apps/external-secrets/base/
+7. mv external-secrets/templates/* .
+8. rm -rf external-secrets
+9. kustomize create --autodetect --recursive --namespace external-secrets --labels 'app.kubernetes.io/managed-by:"Kustomize",app.kubernetes.io/version:"v0.9.20"'
+
+Then adjust kustomization.yaml as desired...

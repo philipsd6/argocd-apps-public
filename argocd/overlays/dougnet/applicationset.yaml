@@ -1,0 +1,48 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: dougnet-appset
+spec:
+  generators:
+    - git:
+        repoURL: https://github.com/philipsd6/argocd-apps.git
+        revision: HEAD
+        directories:
+          - path: "*"
+          - path: argocd
+            exclude: true
+          - path: "external-secrets"
+            exclude: true
+          - path: cue.mod
+            exclude: true
+          - path: homeassistant
+            exclude: true
+  template:
+    metadata:
+      name: "{{path.basenameNormalized}}"
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/philipsd6/argocd-apps.git
+        targetRevision: HEAD
+        path: "{{path}}"
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: "{{path.basenameNormalized}}"
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+          allowEmpty: false
+        syncOptions:
+          - CreateNamespace=true
+          - PrunePropagationPolicy=foreground
+          - PruneLast=true
+        retry:
+          limit: 2
+          backoff:
+            duration: 5s
+            factor: 2
+            maxDuration: 3m
+      revisionHistoryLimit: 3
